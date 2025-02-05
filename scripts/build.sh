@@ -1,13 +1,29 @@
-#!/bin/bash
+#!/bin/sh
 
-# Usage: ./scripts/build.sh
-
+# Exit when any command fails
 set -e
 
+# Get the script directory and change to the project root
 cd "$(dirname "$0")/../"
 
-echo "Start building backend..."
+# Detect the operating system
+OS=$(uname -s)
 
-go build -o ./build/memos ./bin/server/main.go
+# Set output file name based on the OS
+if [[ "$OS" == *"CYGWIN"* || "$OS" == *"MINGW"* || "$OS" == *"MSYS"* ]]; then
+  OUTPUT="./build/memos.exe"
+else
+  OUTPUT="./build/memos"
+fi
 
-echo "Backend built!"
+echo "Building for $OS..."
+
+# Build the executable
+go build -o "$OUTPUT" ./bin/memos/main.go
+
+# Output the success message
+echo "Build successful!"
+
+# Output the command to run
+echo "To run the application, execute the following command:"
+echo "$OUTPUT --mode dev"

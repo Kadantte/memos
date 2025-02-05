@@ -1,6 +1,3 @@
-# Air (hot reload) generated
-.air
-
 # temp folder
 tmp
 
@@ -15,7 +12,10 @@ build
 # Jetbrains
 .idea
 
-# vscode
-.vscode
+# Docker Compose Environment File
+.env
 
-bin/air
+dist
+
+# VSCode settings
+.vscode

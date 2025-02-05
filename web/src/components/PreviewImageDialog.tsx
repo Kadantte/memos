@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import * as utils from "../helpers/utils";
-import Icon from "./Icon";
+import { XIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { generateDialog } from "./Dialog";
-import "../less/preview-image-dialog.less";
+import "@/less/preview-image-dialog.less";
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 5;
@@ -14,14 +13,12 @@ interface Props extends DialogProps {
 }
 
 interface State {
-  angle: number;
   scale: number;
   originX: number;
   originY: number;
 }
 
 const defaultState: State = {
-  angle: 0,
   scale: 1,
   originX: -1,
   originY: -1,
@@ -30,90 +27,149 @@ const defaultState: State = {
 const PreviewImageDialog: React.FC<Props> = ({ destroy, imgUrls, initialIndex }: Props) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [state, setState] = useState<State>(defaultState);
+  let startX = -1;
+  let endX = -1;
 
   const handleCloseBtnClick = () => {
-    destroy();
+    destroyAndResetViewport();
   };
 
-  const handleDownloadBtnClick = () => {
-    const a = document.createElement("a");
-    a.href = imgUrls[currentIndex];
-    a.download = `memos-${utils.getDateTimeString(Date.now())}.png`;
-    a.click();
+  const handleTouchStart = (event: React.TouchEvent) => {
+    if (event.touches.length > 1) {
+      // two or more fingers, ignore
+      return;
+    }
+    startX = event.touches[0].clientX;
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (event.touches.length > 1) {
+      // two or more fingers, ignore
+      return;
+    }
+    endX = event.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (event.touches.length > 1) {
+      // two or more fingers, ignore
+      return;
+    }
+    if (startX > -1 && endX > -1) {
+      const distance = startX - endX;
+      if (distance > 50) {
+        showNextImg();
+      } else if (distance < -50) {
+        showPrevImg();
+      }
+    }
+
+    endX = -1;
+    startX = -1;
+  };
+
+  const showPrevImg = () => {
+    if (currentIndex > 0) {
+      setState(defaultState);
+      setCurrentIndex(currentIndex - 1);
+    } else {
+      destroyAndResetViewport();
+    }
+  };
+
+  const showNextImg = () => {
+    if (currentIndex < imgUrls.length - 1) {
+      setState(defaultState);
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      destroyAndResetViewport();
+    }
   };
 
   const handleImgContainerClick = (event: React.MouseEvent) => {
     if (event.clientX < window.innerWidth / 2) {
-      if (currentIndex > 0) {
-        setState(defaultState);
-        setCurrentIndex(currentIndex - 1);
-      } else {
-        destroy();
-      }
+      showPrevImg();
     } else {
-      if (currentIndex < imgUrls.length - 1) {
-        setState(defaultState);
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        destroy();
-      }
+      showNextImg();
     }
   };
 
-  const handleImgRotate = (event: React.MouseEvent, angle: number) => {
-    const curImgAngle = (state.angle + angle + 360) % 360;
-    setState({
-      ...state,
-      originX: -1,
-      originY: -1,
-      angle: curImgAngle,
-    });
+  const handleImageContainerKeyDown = (event: KeyboardEvent) => {
+    if (event.key == "ArrowLeft") {
+      showPrevImg();
+    } else if (event.key == "ArrowRight") {
+      showNextImg();
+    }
   };
 
   const handleImgContainerScroll = (event: React.WheelEvent) => {
     const offsetX = event.nativeEvent.offsetX;
     const offsetY = event.nativeEvent.offsetY;
     const sign = event.deltaY < 0 ? 1 : -1;
-    const curAngle = Math.max(MIN_SCALE, Math.min(MAX_SCALE, state.scale + sign * SCALE_UNIT));
+    const scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, state.scale + sign * SCALE_UNIT));
     setState({
       ...state,
       originX: offsetX,
       originY: offsetY,
-      scale: curAngle,
+      scale: scale,
     });
   };
 
-  const getImageComputedStyle = () => {
-    return {
-      transform: `scale(${state.scale}) rotate(${state.angle}deg)`,
-      transformOrigin: `${state.originX === -1 ? "center" : `${state.originX}px`} ${
-        state.originY === -1 ? "center" : `${state.originY}px`
-      }`,
-    };
+  const setViewportScalable = () => {
+    const viewport = document.querySelector("meta[name=viewport]");
+    if (viewport) {
+      const contentAttrs = viewport.getAttribute("content");
+      if (contentAttrs) {
+        viewport.setAttribute("content", contentAttrs.replace("user-scalable=no", "user-scalable=yes"));
+      }
+    }
   };
+
+  const destroyAndResetViewport = () => {
+    const viewport = document.querySelector("meta[name=viewport]");
+    if (viewport) {
+      const contentAttrs = viewport.getAttribute("content");
+      if (contentAttrs) {
+        viewport.setAttribute("content", contentAttrs.replace("user-scalable=yes", "user-scalable=no"));
+      }
+    }
+    destroy();
+  };
+
+  const imageComputedStyle = {
+    transform: `scale(${state.scale})`,
+    transformOrigin: `${state.originX === -1 ? "center" : `${state.originX}px`} ${state.originY === -1 ? "center" : `${state.originY}px`}`,
+  };
+
+  useEffect(() => {
+    setViewportScalable();
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleImageContainerKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleImageContainerKeyDown);
+    };
+  }, [currentIndex]);
 
   return (
     <>
       <div className="btns-container">
         <button className="btn" onClick={handleCloseBtnClick}>
-          <Icon.X className="icon-img" />
-        </button>
-        <button className="btn" onClick={handleDownloadBtnClick}>
-          <Icon.Download className="icon-img" />
-        </button>
-        <button className="btn" onClick={(e) => handleImgRotate(e, -90)}>
-          <Icon.RotateCcw className="icon-img" />
-        </button>
-        <button className="btn" onClick={(e) => handleImgRotate(e, 90)}>
-          <Icon.RotateCw className="icon-img" />
+          <XIcon className="icon-img" />
         </button>
       </div>
       <div className="img-container" onClick={handleImgContainerClick}>
         <img
-          onClick={(e) => e.stopPropagation()}
+          style={imageComputedStyle}
           src={imgUrls[currentIndex]}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           onWheel={handleImgContainerScroll}
-          style={getImageComputedStyle()}
+          decoding="async"
+          loading="lazy"
         />
       </div>
     </>
@@ -130,6 +186,6 @@ export default function showPreviewImageDialog(imgUrls: string[] | string, initi
     {
       imgUrls: Array.isArray(imgUrls) ? imgUrls : [imgUrls],
       initialIndex: initialIndex || 0,
-    }
+    },
   );
 }

@@ -1,84 +1,52 @@
-<p align="center"><a href="https://usememos.com"><img height="64px" src="https://raw.githubusercontent.com/usememos/memos/main/resources/logo-full.webp" alt="✍️ memos" /></a></p>
+# Memos - Open Source, Self-hosted, Your Notes, Your Way
 
-<p align="center">An open-source, self-hosted memo hub with knowledge management and socialization.</p>
+<img align="right" height="96px" src="https://www.usememos.com/logo-rounded.png" alt="Memos" />
 
-<p align="center">
-  <a href="https://github.com/usememos/memos/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/usememos/memos" /></a>
-  <a href="https://hub.docker.com/r/neosmemo/memos"><img alt="Docker pull" src="https://img.shields.io/docker/pulls/neosmemo/memos.svg" /></a>
+An open-source, self-hosted note-taking solution designed for seamless deployment and multi-platform access. Experience effortless plain text writing with pain-free, complemented by robust Markdown syntax support for enhanced formatting.
+
+<a href="https://www.usememos.com">Home Page</a> •
+<a href="https://www.usememos.com/blog">Blogs</a> •
+<a href="https://www.usememos.com/docs">Docs</a> •
+<a href="https://demo.usememos.com/">Live Demo</a>
+
+<p>
+  <a href="https://hub.docker.com/r/neosmemo/memos"><img alt="Docker pull" src="https://img.shields.io/docker/pulls/neosmemo/memos.svg"/></a>
   <a href="https://discord.gg/tfPJa4UmAv"><img alt="Discord" src="https://img.shields.io/badge/discord-chat-5865f2?logo=discord&logoColor=f5f5f5" /></a>
 </p>
 
-<p align="center">
-  <a href="https://demo.usememos.com/">Live Demo</a> •
-  Discuss in <a href="https://t.me/+-_tNF1k70UU4ZTc9">Telegram</a> / <b><a href="https://discord.gg/tfPJa4UmAv">Discord 🏂</a></b>
-</p>
+![demo](https://www.usememos.com/demo.png)
 
-![demo](./resources/demo.webp)
+## Main Features
 
-## Features
-
-- 🦄 Open source and free forever;
-- 🚀 Support for self-hosting with `Docker` in seconds;
-- 📜 Plain textarea first and support some useful Markdown syntax;
-- 👥 Set memo private or public to others;
-- 🧑‍💻 RESTful API for self-service.
+- **Privacy First** 🏠: Take control of your data. All runtime data is securely stored in your local database.
+- **Create at Speed** ✍️: Save content as plain text for quick access, with Markdown support for fast formatting and easy sharing.
+- **Lightweight but Powerful** 🤲: Built with Go, React.js, and a compact architecture, our application delivers powerful performance in a lightweight package.
+- **Customizable** 🧩: Easily customize your server name, icon, description, system style, and execution scripts to make it uniquely yours.
+- **Open Source** 🦦: Memos embraces the future of open source, with all code available on GitHub for transparency and collaboration.
+- **Free to Use** 💸: Enjoy all features completely free, with no charges ever for any content.
 
 ## Deploy with Docker in seconds
 
-### Docker Run
-
-```docker
-docker run -d --name memos -p 5230:5230 -v ~/.memos/:/var/opt/memos neosmemo/memos:latest
+```bash
+docker run -d --name memos -p 5230:5230 -v ~/.memos/:/var/opt/memos neosmemo/memos:stable
 ```
 
-> The `~/.memos/` will be used as the data directory in your machine. And `/var/opt/memos` is the directory of the volume in docker and should not be modified.
+> [!NOTE]
+> This command is only applicable for Unix/Linux systems. For Windows, please refer to the detailed [documentation](https://www.usememos.com/docs/install/container-install#docker-on-windows).
+>
+> The `~/.memos/` directory will be used as the data directory on your local machine, while `/var/opt/memos` is the directory of the volume in Docker and should not be modified.
 
-If the `~/.memos/` does not have a `memos_prod.db` file, then memos will auto generate it. Memos will be running at [http://localhost:5230](http://localhost:5230).
+Learn more about [other installation methods](https://www.usememos.com/docs/install).
 
-### Docker Compose
+## Contribution
 
-Example Compose YAML file: [`docker-compose.yaml`](./docker-compose.yaml).
-
-If you want to upgrade the version of memos, use the following command.
-
-```sh
-docker-compose down && docker image rm neosmemo/memos:latest && docker-compose up -d
-```
-
-### Other guides
-
-- [Deploy on render.com](./docs/deploy-with-render.md)
-- [Deploy on fly.io](https://github.com/hu3rror/memos-on-fly)
-
-## Contribute
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated. 🥰
-
-See more in [development guide](./docs/development.md).
-
-## Products made by Community
-
-- [Moe Memos](https://memos.moe/) - Third party client for iOS and Android
-- [lmm214/memos-bber](https://github.com/lmm214/memos-bber) - Chrome extension
-- [Rabithua/memos_wmp](https://github.com/Rabithua/memos_wmp) - WeChat MiniProgram
-- [qazxcdswe123/telegramMemoBot](https://github.com/qazxcdswe123/telegramMemoBot) - Telegram bot
-- [eallion/memos.top](https://github.com/eallion/memos.top) - A static page rendered with the Memos API
-- [eindex/logseq-memos-sync](https://github.com/EINDEX/logseq-memos-sync) - A Logseq plugin
-
-## User stories
-
-- [Memos - A Twitter Like Notes App You can Self Host](https://noted.lol/memos/)
-
-### Join the community to build memos together!
-
-<a href="https://github.com/usememos/memos/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=usememos/memos" />
-</a>
-
-## License
-
-This project is open source and available under the [MIT License](https://github.com/usememos/memos/blob/main/LICENSE).
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. We greatly appreciate any contributions you make. Thank you for being a part of our community! 🥰
 
 ## Star history
 
 [![Star History Chart](https://api.star-history.com/svg?repos=usememos/memos&type=Date)](https://star-history.com/#usememos/memos&Date)
+
+## Other Projects
+
+- [**Slash**](https://github.com/yourselfhosted/slash): An open source, self-hosted bookmarks and link sharing platform. Save and share your links very easily.
+- [**Gomark**](https://github.com/usememos/gomark): A markdown parser written in Go for Memos. And its [WebAssembly version](https://github.com/usememos/gomark-wasm) is also available.

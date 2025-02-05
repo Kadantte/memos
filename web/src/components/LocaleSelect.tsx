@@ -1,11 +1,12 @@
 import { Option, Select } from "@mui/joy";
+import { GlobeIcon } from "lucide-react";
 import { FC } from "react";
-import Icon from "./Icon";
+import { locales } from "@/i18n";
 
 interface Props {
   value: Locale;
-  onChange: (locale: Locale) => void;
   className?: string;
+  onChange: (locale: Locale) => void;
 }
 
 const LocaleSelect: FC<Props> = (props: Props) => {
@@ -18,21 +19,30 @@ const LocaleSelect: FC<Props> = (props: Props) => {
   return (
     <Select
       className={`!min-w-[10rem] w-auto whitespace-nowrap ${className ?? ""}`}
-      startDecorator={<Icon.Globe className="w-4 h-auto" />}
+      startDecorator={<GlobeIcon className="w-4 h-auto" />}
       value={value}
       onChange={(_, value) => handleSelectChange(value as Locale)}
     >
-      <Option value="en">English</Option>
-      <Option value="zh">中文</Option>
-      <Option value="vi">Tiếng Việt</Option>
-      <Option value="fr">French</Option>
-      <Option value="nl">Nederlands</Option>
-      <Option value="sv">Svenska</Option>
-      <Option value="de">German</Option>
-      <Option value="es">Español</Option>
-      <Option value="uk">Українська</Option>
-      <Option value="ru">Русский</Option>
-      <Option value="it">Italiano</Option>
+      {locales.map((locale) => {
+        try {
+          const languageName = new Intl.DisplayNames([locale], { type: "language" }).of(locale);
+          if (languageName) {
+            return (
+              <Option key={locale} value={locale}>
+                {languageName.charAt(0).toUpperCase() + languageName.slice(1)}
+              </Option>
+            );
+          }
+        } catch (error) {
+          // do nth
+        }
+
+        return (
+          <Option key={locale} value={locale}>
+            {locale}
+          </Option>
+        );
+      })}
     </Select>
   );
 };

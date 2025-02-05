@@ -1,16 +1,17 @@
+import { CssVarsProvider } from "@mui/joy";
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { ANIMATION_DURATION } from "../../helpers/consts";
-import store from "../../store";
-import { useDialogStore } from "../../store/module";
-import { CssVarsProvider } from "@mui/joy";
-import theme from "../../theme";
-import "../../less/base-dialog.less";
+import CommonContextProvider from "@/layouts/CommonContextProvider";
+import store from "@/store";
+import { useDialogStore } from "@/store/module";
+import theme from "@/theme";
+import { cn } from "@/utils";
+import "@/less/base-dialog.less";
 
 interface DialogConfig {
-  className: string;
   dialogName: string;
+  className?: string;
   clickSpaceDestroy?: boolean;
 }
 
@@ -55,8 +56,8 @@ const BaseDialog: React.FC<Props> = (props: Props) => {
   };
 
   return (
-    <div className={`dialog-wrapper ${className}`} onMouseDown={handleSpaceClicked}>
-      <div ref={dialogContainerRef} className="dialog-container" onMouseDown={(e) => e.stopPropagation()}>
+    <div className={cn("dialog-wrapper", className)} onMouseDown={handleSpaceClicked}>
+      <div ref={dialogContainerRef} className={cn("dialog-container")} onMouseDown={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -66,24 +67,18 @@ const BaseDialog: React.FC<Props> = (props: Props) => {
 export function generateDialog<T extends DialogProps>(
   config: DialogConfig,
   DialogComponent: React.FC<T>,
-  props?: Omit<T, "destroy">
+  props?: Omit<T, "destroy">,
 ): DialogCallback {
   const tempDiv = document.createElement("div");
   const dialog = createRoot(tempDiv);
   document.body.append(tempDiv);
-
-  setTimeout(() => {
-    tempDiv.firstElementChild?.classList.add("showup");
-  }, 0);
+  document.body.style.overflow = "hidden";
 
   const cbs: DialogCallback = {
     destroy: () => {
-      tempDiv.firstElementChild?.classList.remove("showup");
-      tempDiv.firstElementChild?.classList.add("showoff");
-      setTimeout(() => {
-        dialog.unmount();
-        tempDiv.remove();
-      }, ANIMATION_DURATION);
+      document.body.style.removeProperty("overflow");
+      dialog.unmount();
+      tempDiv.remove();
     },
   };
 
@@ -95,9 +90,11 @@ export function generateDialog<T extends DialogProps>(
   const Fragment = (
     <Provider store={store}>
       <CssVarsProvider theme={theme}>
-        <BaseDialog destroy={cbs.destroy} clickSpaceDestroy={true} {...config}>
-          <DialogComponent {...dialogProps} />
-        </BaseDialog>
+        <CommonContextProvider>
+          <BaseDialog destroy={cbs.destroy} clickSpaceDestroy={true} {...config}>
+            <DialogComponent {...dialogProps} />
+          </BaseDialog>
+        </CommonContextProvider>
       </CssVarsProvider>
     </Provider>
   );

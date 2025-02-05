@@ -1,1 +1,1 @@
-# Memos web
+# The frontend of Memos

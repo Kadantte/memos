@@ -2,88 +2,64 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/usememos/memos/api"
+	storepb "github.com/usememos/memos/proto/gen/store"
 )
 
-// activityRaw is the store model for an Activity.
-// Fields have exactly the same meanings as Activity.
-type activityRaw struct {
-	ID int
+type ActivityType string
+
+const (
+	ActivityTypeMemoComment   ActivityType = "MEMO_COMMENT"
+	ActivityTypeVersionUpdate ActivityType = "VERSION_UPDATE"
+)
+
+func (t ActivityType) String() string {
+	return string(t)
+}
+
+type ActivityLevel string
+
+const (
+	ActivityLevelInfo ActivityLevel = "INFO"
+)
+
+func (l ActivityLevel) String() string {
+	return string(l)
+}
+
+type Activity struct {
+	ID int32
 
 	// Standard fields
-	CreatorID int
+	CreatorID int32
 	CreatedTs int64
 
 	// Domain specific fields
-	Type    api.ActivityType
-	Level   api.ActivityLevel
-	Payload string
+	Type    ActivityType
+	Level   ActivityLevel
+	Payload *storepb.ActivityPayload
 }
 
-// toActivity creates an instance of Activity based on the ActivityRaw.
-func (raw *activityRaw) toActivity() *api.Activity {
-	return &api.Activity{
-		ID: raw.ID,
-
-		CreatorID: raw.CreatorID,
-		CreatedTs: raw.CreatedTs,
-
-		Type:    raw.Type,
-		Level:   raw.Level,
-		Payload: raw.Payload,
-	}
+type FindActivity struct {
+	ID   *int32
+	Type *ActivityType
 }
 
-// CreateActivity creates an instance of Activity.
-func (s *Store) CreateActivity(ctx context.Context, create *api.ActivityCreate) (*api.Activity, error) {
-	if s.profile.Mode != "dev" {
-		return nil, nil
-	}
+func (s *Store) CreateActivity(ctx context.Context, create *Activity) (*Activity, error) {
+	return s.driver.CreateActivity(ctx, create)
+}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, FormatError(err)
-	}
-	defer tx.Rollback()
+func (s *Store) ListActivities(ctx context.Context, find *FindActivity) ([]*Activity, error) {
+	return s.driver.ListActivities(ctx, find)
+}
 
-	activityRaw, err := createActivity(ctx, tx, create)
+func (s *Store) GetActivity(ctx context.Context, find *FindActivity) (*Activity, error) {
+	list, err := s.ListActivities(ctx, find)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, FormatError(err)
+	if len(list) == 0 {
+		return nil, nil
 	}
-
-	activity := activityRaw.toActivity()
-	return activity, nil
-}
-
-// createActivity creates a new activity.
-func createActivity(ctx context.Context, tx *sql.Tx, create *api.ActivityCreate) (*activityRaw, error) {
-	query := `
-		INSERT INTO activity (
-			creator_id, 
-			type, 
-			level, 
-			payload
-		)
-		VALUES (?, ?, ?, ?)
-		RETURNING id, type, level, payload, creator_id, created_ts
-	`
-	var activityRaw activityRaw
-	if err := tx.QueryRowContext(ctx, query, create.CreatorID, create.Type, create.Level, create.Payload).Scan(
-		&activityRaw.ID,
-		&activityRaw.Type,
-		&activityRaw.Level,
-		&activityRaw.Payload,
-		&activityRaw.CreatedTs,
-		&activityRaw.CreatedTs,
-	); err != nil {
-		return nil, FormatError(err)
-	}
-
-	return &activityRaw, nil
+	return list[0], nil
 }

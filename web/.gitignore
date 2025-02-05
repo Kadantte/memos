@@ -1,7 +1,7 @@
 node_modules
+.pnpm-store
 .DS_Store
 dist
 dist-ssr
 *.local
-
-.yarn/*
+src/types/proto

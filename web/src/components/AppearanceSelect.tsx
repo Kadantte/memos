@@ -1,7 +1,7 @@
 import { Option, Select } from "@mui/joy";
+import { SunIcon, MoonIcon, SmileIcon } from "lucide-react";
 import { FC } from "react";
-import { useTranslation } from "react-i18next";
-import Icon from "./Icon";
+import { useTranslate } from "@/utils/i18n";
 
 interface Props {
   value: Appearance;
@@ -9,20 +9,20 @@ interface Props {
   className?: string;
 }
 
-const appearanceList = ["system", "light", "dark"];
+const appearanceList = ["system", "light", "dark"] as const;
 
 const AppearanceSelect: FC<Props> = (props: Props) => {
   const { onChange, value, className } = props;
-  const { t } = useTranslation();
+  const t = useTranslate();
 
-  const getPrefixIcon = (apperance: Appearance) => {
+  const getPrefixIcon = (appearance: Appearance) => {
     const className = "w-4 h-auto";
-    if (apperance === "light") {
-      return <Icon.Sun className={className} />;
-    } else if (apperance === "dark") {
-      return <Icon.Moon className={className} />;
+    if (appearance === "light") {
+      return <SunIcon className={className} />;
+    } else if (appearance === "dark") {
+      return <MoonIcon className={className} />;
     } else {
-      return <Icon.Smile className={className} />;
+      return <SmileIcon className={className} />;
     }
   };
 
@@ -43,7 +43,7 @@ const AppearanceSelect: FC<Props> = (props: Props) => {
     >
       {appearanceList.map((item) => (
         <Option key={item} value={item} className="whitespace-nowrap">
-          {t(`setting.apperance-option.${item}`)}
+          {t(`setting.appearance-option.${item}`)}
         </Option>
       ))}
     </Select>

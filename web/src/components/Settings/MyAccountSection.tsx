@@ -1,60 +1,49 @@
-import { useTranslation } from "react-i18next";
-import { useUserStore } from "../../store/module";
-import { showCommonDialog } from "../Dialog/CommonDialog";
-import showChangePasswordDialog from "../ChangePasswordDialog";
+import { Dropdown, Menu, MenuButton, MenuItem } from "@mui/joy";
+import { Button } from "@usememos/mui";
+import { MoreVerticalIcon, PenLineIcon } from "lucide-react";
+import useCurrentUser from "@/hooks/useCurrentUser";
+import { useTranslate } from "@/utils/i18n";
+import showChangeMemberPasswordDialog from "../ChangeMemberPasswordDialog";
 import showUpdateAccountDialog from "../UpdateAccountDialog";
-import "../../less/settings/my-account-section.less";
+import UserAvatar from "../UserAvatar";
+import AccessTokenSection from "./AccessTokenSection";
 
 const MyAccountSection = () => {
-  const { t } = useTranslation();
-  const userStore = useUserStore();
-  const user = userStore.state.user as User;
-  const openAPIRoute = `${window.location.origin}/api/memo?openId=${user.openId}`;
-
-  const handleResetOpenIdBtnClick = async () => {
-    showCommonDialog({
-      title: "Reset Open API",
-      content: "❗️The existing API will be invalidated and a new one will be generated, are you sure you want to reset?",
-      style: "warning",
-      dialogName: "reset-openid-dialog",
-      onConfirm: async () => {
-        await userStore.patchUser({
-          id: user.id,
-          resetOpenId: true,
-        });
-      },
-    });
-  };
+  const t = useTranslate();
+  const user = useCurrentUser();
 
   return (
-    <>
-      <div className="section-container account-section-container">
-        <p className="title-text">{t("setting.account-section.title")}</p>
-        <div className="flex flex-row justify-start items-end">
-          <span className="text-2xl leading-10 font-medium">{user.nickname}</span>
-          <span className="text-base ml-1 text-gray-500 leading-8">({user.username})</span>
-        </div>
-        <div className="flex flex-row justify-start items-center text-base text-gray-600">{user.email}</div>
-        <div className="w-full flex flex-row justify-start items-center mt-2 space-x-2">
-          <button className="btn-normal" onClick={showUpdateAccountDialog}>
-            {t("setting.account-section.update-information")}
-          </button>
-          <button className="btn-normal" onClick={showChangePasswordDialog}>
-            {t("setting.account-section.change-password")}
-          </button>
+    <div className="w-full gap-2 pt-2 pb-4">
+      <p className="font-medium text-gray-700 dark:text-gray-500">{t("setting.account-section.title")}</p>
+      <div className="w-full mt-2 flex flex-row justify-start items-center">
+        <UserAvatar className="mr-2 shrink-0 w-10 h-10" avatarUrl={user.avatarUrl} />
+        <div className="max-w-[calc(100%-3rem)] flex flex-col justify-center items-start">
+          <p className="w-full">
+            <span className="text-xl leading-tight font-medium">{user.nickname}</span>
+            <span className="ml-1 text-base leading-tight text-gray-500 dark:text-gray-400">({user.username})</span>
+          </p>
+          <p className="w-4/5 leading-tight text-sm truncate">{user.description}</p>
         </div>
       </div>
-      <div className="section-container openapi-section-container">
-        <p className="title-text">Open API</p>
-        <p className="value-text">{openAPIRoute}</p>
-        <span className="btn-danger mt-2" onClick={handleResetOpenIdBtnClick}>
-          {t("common.reset")} API
-        </span>
-        <div className="usage-guide-container">
-          <pre>{`POST ${openAPIRoute}\nContent-type: application/json\n{\n  "content": "Hello #memos from ${window.location.origin}"\n}`}</pre>
-        </div>
+      <div className="w-full flex flex-row justify-start items-center mt-2 space-x-2">
+        <Button variant="outlined" size="sm" onClick={showUpdateAccountDialog}>
+          <PenLineIcon className="w-4 h-4 mx-auto mr-1" />
+          {t("common.edit")}
+        </Button>
+        <Dropdown>
+          <MenuButton slots={{ root: "div" }}>
+            <Button variant="outlined" size="sm">
+              <MoreVerticalIcon className="w-4 h-4 mx-auto" />
+            </Button>
+          </MenuButton>
+          <Menu className="text-sm" size="sm" placement="bottom">
+            <MenuItem onClick={() => showChangeMemberPasswordDialog(user)}>{t("setting.account-section.change-password")}</MenuItem>
+          </Menu>
+        </Dropdown>
       </div>
-    </>
+
+      <AccessTokenSection />
+    </div>
   );
 };
 

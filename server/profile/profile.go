@@ -1,74 +1,90 @@
 package profile
 
 import (
-	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
-	"github.com/usememos/memos/server/version"
+	"github.com/pkg/errors"
 )
 
 // Profile is the configuration to start main server.
 type Profile struct {
-	// Mode can be "prod" or "dev"
-	Mode string `json:"mode"`
+	// Mode can be "prod" or "dev" or "demo"
+	Mode string
+	// Addr is the binding address for server
+	Addr string
 	// Port is the binding port for server
-	Port int `json:"port"`
+	Port int
 	// Data is the data directory
-	Data string `json:"data"`
-	// DSN points to where Memos stores its own data
-	DSN string `json:"dsn"`
+	Data string
+	// DSN points to where memos stores its own data
+	DSN string
+	// Driver is the database driver
+	// sqlite, mysql
+	Driver string
 	// Version is the current version of server
-	Version string `json:"version"`
+	Version string
+	// InstanceURL is the url of your memos instance.
+	InstanceURL string
 }
 
-func checkDSN(dataDir string) (string, error) {
+func (p *Profile) IsDev() bool {
+	return p.Mode != "prod"
+}
+
+func checkDataDir(dataDir string) (string, error) {
 	// Convert to absolute path if relative path is supplied.
 	if !filepath.IsAbs(dataDir) {
-		absDir, err := filepath.Abs(filepath.Dir(os.Args[0]) + "/" + dataDir)
+		relativeDir := filepath.Join(filepath.Dir(os.Args[0]), dataDir)
+		absDir, err := filepath.Abs(relativeDir)
 		if err != nil {
 			return "", err
 		}
 		dataDir = absDir
 	}
 
-	// Trim trailing / in case user supplies
-	dataDir = strings.TrimRight(dataDir, "/")
-
+	// Trim trailing \ or / in case user supplies
+	dataDir = strings.TrimRight(dataDir, "\\/")
 	if _, err := os.Stat(dataDir); err != nil {
-		return "", fmt.Errorf("unable to access data folder %s, err %w", dataDir, err)
+		return "", errors.Wrapf(err, "unable to access data folder %s", dataDir)
 	}
-
 	return dataDir, nil
 }
 
-// GetDevProfile will return a profile for dev or prod.
-func GetProfile() (*Profile, error) {
-	profile := Profile{}
-	flag.StringVar(&profile.Mode, "mode", "dev", "mode of server")
-	flag.IntVar(&profile.Port, "port", 8081, "port of server")
-	flag.StringVar(&profile.Data, "data", "", "data directory")
-	flag.Parse()
-
-	if profile.Mode != "dev" && profile.Mode != "prod" {
-		profile.Mode = "dev"
+func (p *Profile) Validate() error {
+	if p.Mode != "demo" && p.Mode != "dev" && p.Mode != "prod" {
+		p.Mode = "demo"
 	}
 
-	if profile.Mode == "prod" && profile.Data == "" {
-		profile.Data = "/var/opt/memos"
+	if p.Mode == "prod" && p.Data == "" {
+		if runtime.GOOS == "windows" {
+			p.Data = filepath.Join(os.Getenv("ProgramData"), "memos")
+			if _, err := os.Stat(p.Data); os.IsNotExist(err) {
+				if err := os.MkdirAll(p.Data, 0770); err != nil {
+					slog.Error("failed to create data directory", slog.String("data", p.Data), slog.String("error", err.Error()))
+					return err
+				}
+			}
+		} else {
+			p.Data = "/var/opt/memos"
+		}
 	}
 
-	dataDir, err := checkDSN(profile.Data)
+	dataDir, err := checkDataDir(p.Data)
 	if err != nil {
-		fmt.Printf("Failed to check dsn: %s, err: %+v\n", dataDir, err)
-		return nil, err
+		slog.Error("failed to check dsn", slog.String("data", dataDir), slog.String("error", err.Error()))
+		return err
 	}
 
-	profile.Data = dataDir
-	profile.DSN = fmt.Sprintf("%s/memos_%s.db", dataDir, profile.Mode)
-	profile.Version = version.GetCurrentVersion(profile.Mode)
+	p.Data = dataDir
+	if p.Driver == "sqlite" && p.DSN == "" {
+		dbFile := fmt.Sprintf("memos_%s.db", p.Mode)
+		p.DSN = filepath.Join(dataDir, dbFile)
+	}
 
-	return &profile, nil
+	return nil
 }

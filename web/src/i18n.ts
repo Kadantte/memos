@@ -1,55 +1,74 @@
-import i18n from "i18next";
+import i18n, { BackendModule, FallbackLng, FallbackLngObjList } from "i18next";
+import { orderBy } from "lodash-es";
 import { initReactI18next } from "react-i18next";
-import enLocale from "./locales/en.json";
-import zhLocale from "./locales/zh.json";
-import viLocale from "./locales/vi.json";
-import frLocale from "./locales/fr.json";
-import nlLocale from "./locales/nl.json";
-import svLocale from "./locales/sv.json";
-import deLocale from "./locales/de.json";
-import esLocale from "./locales/es.json";
-import ukLocale from "./locales/uk.json";
-import ruLocale from "./locales/ru.json";
-import itLocale from "./locales/it.json";
+import { findNearestMatchedLanguage } from "./utils/i18n";
 
-i18n.use(initReactI18next).init({
-  resources: {
-    en: {
-      translation: enLocale,
-    },
-    zh: {
-      translation: zhLocale,
-    },
-    vi: {
-      translation: viLocale,
-    },
-    fr: {
-      translation: frLocale,
-    },
-    nl: {
-      translation: nlLocale,
-    },
-    sv: {
-      translation: svLocale,
-    },
-    de: {
-      translation: deLocale,
-    },
-    es: {
-      translation: esLocale,
-    },
-    uk: {
-      translation: ukLocale,
-    },
-    ru: {
-      translation: ruLocale,
-    },
-    it: {
-      translation: itLocale,
-    },
+export const locales = orderBy([
+  "ar",
+  "cs",
+  "de",
+  "en",
+  "en-GB",
+  "es",
+  "fa",
+  "fr",
+  "hi",
+  "hr",
+  "hu",
+  "id",
+  "it",
+  "ja",
+  "ka-GE",
+  "ko",
+  "mr",
+  "nl",
+  "pl",
+  "pt-PT",
+  "pt-BR",
+  "ru",
+  "sl",
+  "sv",
+  "th",
+  "tr",
+  "uk",
+  "vi",
+  "zh-Hans",
+  "zh-Hant",
+]);
+
+const fallbacks = {
+  "zh-HK": ["zh-Hant", "en"],
+  "zh-TW": ["zh-Hant", "en"],
+  zh: ["zh-Hans", "en"],
+} as FallbackLngObjList;
+
+const LazyImportPlugin: BackendModule = {
+  type: "backend",
+  init: function () {},
+  read: function (language, _, callback) {
+    const matchedLanguage = findNearestMatchedLanguage(language);
+    import(`./locales/${matchedLanguage}.json`)
+      .then((translation: any) => {
+        callback(null, translation);
+      })
+      .catch(() => {
+        // Fallback to English.
+      });
   },
-  lng: "nl",
-  fallbackLng: "en",
-});
+};
+
+i18n
+  .use(LazyImportPlugin)
+  .use(initReactI18next)
+  .init({
+    detection: {
+      order: ["navigator"],
+    },
+    fallbackLng: {
+      ...fallbacks,
+      ...{ default: ["en"] },
+    } as FallbackLng,
+  });
 
 export default i18n;
+export type TLocale = (typeof locales)[number];
